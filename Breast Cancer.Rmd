@@ -1,0 +1,51 @@
+---
+title: "BreastCancer - R"
+author: "Pooja Vasudevan"
+date: "7/13/2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Breast Cancer
+
+This document is to examine the important factors that lead to the presence or absence of breast cancer. Breast cancer is an important topic because it's a common diseases that affects women worldwide. Our clients include pharmaceutical companies who are looking to examine the risk of breast cancer.
+
+```{r}
+cancer = read.csv("/Users/pooja.vasudevan/Downloads/cancerdata.csv")
+cancer$target[cancer$Classification==2]=1
+cancer$target[cancer$Classification==1]=0
+mod <- glm(formula=target ~ Age+BMI+Glucose, family=binomial, data=cancer)
+summary(mod)
+library(caTools)
+set.seed(88)
+split = sample.split(cancer$target, SplitRatio = 0.75)
+cancerTrain = subset(cancer, split==TRUE)
+cancerTest = subset(cancer, split==FALSE)
+CancerLog = glm(target ~ Age + BMI, family=binomial, data=cancerTrain)
+summary(CancerLog)
+predictTrain = predict(CancerLog, type="response")
+summary(predictTrain)
+tapply(predictTrain, cancerTrain$target, mean)
+table(cancerTrain$target, predictTrain > 0.5)
+```
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(mod)
+mod.res=resid(mod)
+plot(cancer$BMI, mod.res, ylab="Residuals", xlab="BMI", main="BMI Factors")
+ROCRpred = prediction(predictTrain, cancerTrain$target)
+ROCRpref = performance(ROCRpred, "tpr", "fpr")
+plot(ROCRpref, colorize=TRUE)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
