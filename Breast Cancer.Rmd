@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 This document is to examine the important factors that lead to the presence or absence of breast cancer. Breast cancer is an important topic because it's a common diseases that affects women worldwide. Our clients include pharmaceutical companies who are looking to examine the risk of breast cancer.
 
 ```{r}
+library(ROCR)
 cancer = read.csv("/Users/pooja.vasudevan/Downloads/cancerdata.csv")
 cancer$target[cancer$Classification==2]=1
 cancer$target[cancer$Classification==1]=0
