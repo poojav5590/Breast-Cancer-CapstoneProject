@@ -44,6 +44,11 @@ View(cancer)
 
 cancer$BMI_scale <- (cancer$BMI-mean(cancer$BMI))/sd(cancer$BMI)
 
+cancer['new_bmi'][which(cancer['bmi']>=19 & cancer['group'] <= 25)] <- 'normal'
+cancer['new_bmi'][which(cancer['bmi']<18)] <- 'underweight'
+cancer['new_bmi'][which(cancer['bmi']>=25) & cancer['group'] <= 29] <- 'overweight'
+cancer['new_bmi'][which(cancer['bmi']>=30)] <- 'obese'
+
 boxplot(BMI ~ Age, data = cancer,
         xlab = "Age", ylab = "Maximum BMI",
         main = "Age v. BMI"
@@ -51,3 +56,29 @@ boxplot(BMI ~ Age, data = cancer,
 
 hist(cancer$Glucose, bin=20)
 hist(cancer$BMI)
+
+library(ISLR)
+library(boot)
+## LOOCV approach
+set.seed(1)
+
+
+#Fit a linear model
+m = glm(BMI ~ Age, data = cancerTrain)
+MSE_LOOCV = cv.glm(cancerTrain, m) #test model on data that hasb't been trained on
+MSE_LOOCV$delta[1]
+
+MSE_10_fold_cv = NULL
+for(i in 1:10){
+  m = glm(BMI~poly(Age, i), data=cancerTrain)
+  MSE_10_fold_cv[i] = cv.glm(cancerTrain, m, K=10)$delta[1] ##divide data set in 10 parts
+}
+MSE_10_fold_cv 
+MSE_LOOCV
+
+install.packages("corrplot")
+library(corrplot)
+cancer_feature_set <- cancer[1:9]
+View(cancer_feature_set)
+cor1 <- cor(cancer_feature_set)
+corrplot(cor1, method="color")
