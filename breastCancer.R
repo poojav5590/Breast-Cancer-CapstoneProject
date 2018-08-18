@@ -54,7 +54,7 @@ boxplot(BMI ~ Age, data = cancer,
         main = "Age v. BMI"
 )
 
-hist(cancer$Glucose, bin=20)
+hist(cancer$Glucose, bin=50)
 hist(cancer$BMI)
 
 library(ISLR)
