@@ -15,11 +15,11 @@ View(cancer)
 train_index <- sample(1:nrow(cancer), 0.8 * nrow(cancer))
 test_index <- setdiff(1:nrow(cancer), train_index)
 
-#X_train <-cancer[train_index, -15]
-#y_train <- cancer[train_index, "BMI"]
+X_train <-cancer[train_index, -15]
+y_train <- cancer[train_index, "BMI"]
 
-#X_test <-cancer[train_index, -15]
-#y_test <- cancer[train_index, "BMI"]
+X_test <-cancer[test_index, -15]
+y_test <- cancer[test_index, "BMI"]
 
 #Data Wrangling
 cancer$BMI_scale <- (cancer$BMI-mean(cancer$BMI))/sd(cancer$BMI)
@@ -27,26 +27,50 @@ cancer$target[cancer$Classification==2]=1
 cancer$target[cancer$Classification==1]=0
 View(cancer)
 mod <- glm(formula=target ~ Age+BMI+Glucose+HOMA+Insulin+Leptin+Adiponectin+Resistin, family=binomial, data=cancer)
+step.mod <- step(mod)
+step.mod
 summary(mod)
+plot(mod)
+
 set.seed(88)
 split = sample.split(cancer$target, SplitRatio = 0.75)
 cancerTrain = subset(cancer, split==TRUE)
 View(cancerTrain)
 cancerTest = subset(cancer, split==FALSE)
-CancerLog = glm(target ~ Age + BMI + Glucose, family=binomial, data=cancerTrain)
+head(cancerTrain)
+CancerLog = glm(target ~ Age+BMI+Glucose+HOMA+Insulin+Leptin+Adiponectin+Resistin, family=binomial, data=cancerTrain)
+final.mod2 <- step(CancerLog)
 summary(CancerLog)
+View(cancerTest)
 cancerTrain$predictTrain = predict(CancerLog, type="response")
+pred = predict(CancerLog, newData=cancerTest, type="response")
+
+cancerTrain$predictTrain = predict(final.mod2, type="response")
+pred2 = predict(final.mod2, newData=cancerTest, type="response")
 
 summary(predictTrain)
 tapply(predictTrain, cancerTrain$target, mean)
-table(cancerTrain$target, predictTrain > 0.5)
-mod.res=resid(mod)
+table(cancerTrain$target, predictTrain > 0.6)
+
+summary(pred)
+tapply(pred, cancerTrain$target, mean)
+table(cancerTrain$target, pred > 0.8)
 
 #Plots
 plot(cancer$BMI, mod.res, ylab="Residuals", xlab="BMI", main="BMI Factors")
+#CancerTrain
 ROCRpred = prediction(predictTrain, cancerTrain$target)
 ROCRpref = performance(ROCRpred, "tpr", "fpr")
 plot(ROCRpref, colorize=TRUE)
+mod.res=resid(mod)
+plot(mod)
+
+#CancerTest
+ROCRpred = prediction(pred, cancerTrain$target)
+ROCRpref = performance(ROCRpred, "tpr", "fpr")
+plot(ROCRpref, colorize=TRUE)
+mod.res=resid(mod)
+plot(mod)
 
 plot(cancer$Age, cancer$BMI, col = cancer$target)
 plot(cancer$BMI, cancer$Glucose, col = cancer$target)
@@ -66,11 +90,6 @@ box_plot <- ggplot(cancer, aes(x = New_BMI, y = Age))
 # Add the geometric object box plot
 box_plot +
   geom_boxplot()
-
-boxplot(New_BMI ~ BMI, data = cancer,
-        xlab = "Age", ylab = "Group BMI",
-        main = "Age v. BMI"
-)
 
 hist(cancer$Glucose, bin=50)
 hist(cancer$BMI)
