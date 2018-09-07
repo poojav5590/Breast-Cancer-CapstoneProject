@@ -12,14 +12,6 @@ summary(cancer)
 str(cancer)
 print(head(cancer, n=4))
 View(cancer)
-train_index <- sample(1:nrow(cancer), 0.8 * nrow(cancer))
-test_index <- setdiff(1:nrow(cancer), train_index)
-
-X_train <-cancer[train_index, -15]
-y_train <- cancer[train_index, "BMI"]
-
-X_test <-cancer[test_index, -15]
-y_test <- cancer[test_index, "BMI"]
 
 #Data Wrangling
 cancer$BMI_scale <- (cancer$BMI-mean(cancer$BMI))/sd(cancer$BMI)
@@ -29,9 +21,9 @@ View(cancer)
 mod <- glm(formula=target ~ Age+BMI+Glucose+HOMA+Insulin+Leptin+Adiponectin+Resistin, family=binomial, data=cancer)
 step.mod <- step(mod)
 step.mod
-summary(mod)
-plot(mod)
+summary(step.mod)
 
+#Cancer Train and Test Data
 set.seed(88)
 split = sample.split(cancer$target, SplitRatio = 0.75)
 cancerTrain = subset(cancer, split==TRUE)
@@ -39,40 +31,62 @@ View(cancerTrain)
 cancerTest = subset(cancer, split==FALSE)
 head(cancerTrain)
 CancerLog = glm(target ~ Age+BMI+Glucose+HOMA+Insulin+Leptin+Adiponectin+Resistin, family=binomial, data=cancerTrain)
-final.mod2 <- step(CancerLog)
+final.mod2 <- step(CancerLog) #Step-wise model
 plot(final.mod2)
 summary(CancerLog)
 View(cancerTest)
 cancerTrain$predictTrain = predict(CancerLog, type="response")
 pred = predict(CancerLog, newData=cancerTest, type="response")
 
-cancerTrain$predictTrain = predict(final.mod2, type="response")
+cancerTrain$predictTrain2 = predict(final.mod2, type="response")
 pred2 = predict(final.mod2, newData=cancerTest, type="response")
 
+#Confusion Matrix - Total Model - Cancer Train
 summary(predictTrain)
 tapply(predictTrain, cancerTrain$target, mean)
 table(cancerTrain$target, predictTrain > 0.6)
 
+#Confusion Matrix - Total Model - Cancer Test
 summary(pred)
 tapply(pred, cancerTrain$target, mean)
 table(cancerTrain$target, pred > 0.8)
 
-#Plots
-plot(cancer$BMI, mod.res, ylab="Residuals", xlab="BMI", main="BMI Factors")
-#CancerTrain
+#Confusion Matrix - Stepwise Model - Cancer Train
+summary(predictTrain2)
+tapply(predictTrain2, cancerTrain$target, mean)
+table(cancerTrain$target, predictTrain2 > 0.6)
+
+#Confusion Matrix - Step-wise Model - Cancer Test
+summary(pred2)
+tapply(pred2, cancerTrain$target, mean)
+table(cancerTrain$target, pred2 > 0.85)
+
+#Residuals
+mod.res=resid(mod)
+plot(mod)
+plot(step.mod)
+
+#ROC Curve - Cancer Train
 ROCRpred = prediction(predictTrain, cancerTrain$target)
 ROCRpref = performance(ROCRpred, "tpr", "fpr")
 plot(ROCRpref, colorize=TRUE)
-mod.res=resid(mod)
-plot(mod)
 
-#CancerTest
+#ROC Curve - Cancer Test
 ROCRpred = prediction(pred, cancerTrain$target)
 ROCRpref = performance(ROCRpred, "tpr", "fpr")
 plot(ROCRpref, colorize=TRUE)
-mod.res=resid(mod)
-plot(mod)
 
+#ROC Curve - Stepwise - Cancer Test
+ROCRpred2 = prediction(pred2, cancerTrain$target)
+ROCRpref2 = performance(ROCRpred2, "tpr", "fpr")
+plot(ROCRpref2, colorize=TRUE)
+
+#ROC Curve - Stepwise - Cancer Train
+ROCRpred3 = prediction(predictTrain2, cancerTrain$target)
+ROCRpref3 = performance(ROCRpred3, "tpr", "fpr")
+plot(ROCRpref2, colorize=TRUE)
+
+#Plots
 plot(cancer$Age, cancer$BMI, col = cancer$target)
 plot(cancer$BMI, cancer$Glucose, col = cancer$target)
 plot(cancer$Glucose, cancer$HOMA, col = cancer$target)
